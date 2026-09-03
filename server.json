@@ -1,0 +1,37 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.ms-methos/jsonfabrica-mcp-server",
+  "title": "JsonFabrica",
+  "description": "Generate realistic, relational synthetic JSON test data from templates, via the JsonFabrica API.",
+  "websiteUrl": "https://jsonfabrica.com",
+  "repository": {
+    "url": "https://github.com/ms-methos/jsonfabrica-mcp-server",
+    "source": "github"
+  },
+  "version": "0.1.4",
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "@jsonfabrica/mcp-server",
+      "version": "0.1.4",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "JSONFABRICA_API_KEY",
+          "description": "JsonFabrica API key. Create one at jsonfabrica.com -> Settings -> API Keys.",
+          "isRequired": true,
+          "isSecret": true
+        },
+        {
+          "name": "JSONFABRICA_API_URL",
+          "description": "Base URL of the JsonFabrica gateway. Override only when self-hosting the gateway.",
+          "isRequired": false,
+          "default": "https://api.jsonfabrica.com"
+        }
+      ]
+    }
+  ]
+}

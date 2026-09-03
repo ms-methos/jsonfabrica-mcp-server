@@ -1,0 +1,35 @@
+{
+  "name": "@jsonfabrica/mcp-server",
+  "version": "0.1.4",
+  "mcpName": "io.github.ms-methos/jsonfabrica-mcp-server",
+  "description": "MCP server that wraps the JsonFabrica gateway REST API as MCP tools over stdio.",
+  "bin": {
+    "jsonfabrica-mcp-server": "dist/index.js"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "test": "npm run build && node --test \"dist/**/*.test.js\""
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ms-methos/jsonfabrica-mcp-server.git"
+  }
+}
