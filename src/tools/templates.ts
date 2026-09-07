@@ -50,12 +50,16 @@ export function registerTemplateTools(server: McpServer, client: Client): void {
         openWorldHint: true,
       },
       description:
-        'Calls POST /v1/templates. Creates a reusable template. `body` uses ' +
+        'Calls POST /v1/templates. Creates a persisted, reusable template that can be generated from ' +
+        'repeatedly with jsonfabrica_generate_from_template — use this instead of jsonfabrica_generate_adhoc ' +
+        'when you want the body saved and shareable rather than a one-off, unsaved evaluation. `body` uses ' +
         "JsonFabrica's function-call placeholder syntax, e.g. \"Hello {{getRandomFullName()}}\" " +
         'or "<getRandomNumber(1,100)>" — see the data-generation-functions reference for the full ' +
-        'catalog. If `generate` is provided, a document is generated from the newly-created ' +
-        'template in the same call (response includes `generation` or `generationError` alongside ' +
-        '`template`); if omitted, the response is just the created template.',
+        'catalog. The optional `generate` field is a convenience that also runs a generation in the same ' +
+        'call (response includes `generation` or `generationError` alongside `template`) so you avoid a ' +
+        'separate jsonfabrica_generate_from_template round-trip; that generation is metered/billed and can ' +
+        'advance durable sequences/variables just like a normal generate call. If `generate` is omitted, the ' +
+        'response is just the created template with no generation side effects.',
       inputSchema: {
         name: z.string().describe('Template name. Required; not required to be unique per tenant.'),
         description: z
@@ -94,7 +98,13 @@ export function registerTemplateTools(server: McpServer, client: Client): void {
         idempotentHint: true,
         openWorldHint: true,
       },
-      description: 'Calls GET /v1/templates. Returns a page of templates (`{ items, nextCursor }`).',
+      description:
+        'Calls GET /v1/templates. Returns a page of templates matching optional `name`/`tags`/`status` ' +
+        'filters (`{ items, nextCursor }`). Use this to discover or search templates when you don\'t already ' +
+        'know the `templateId`; if you already have the id, call jsonfabrica_get_template directly instead — ' +
+        'it is cheaper and returns the full record. This is read-only and has no side effects. Pass ' +
+        '`status: "archived"` to see templates previously removed with jsonfabrica_delete_template, since ' +
+        'the default `active` filter excludes them.',
       inputSchema: {
         name: z
           .string()
@@ -155,7 +165,12 @@ export function registerTemplateTools(server: McpServer, client: Client): void {
         idempotentHint: true,
         openWorldHint: true,
       },
-      description: 'Calls GET /v1/templates/{templateId}. Returns the full template record.',
+      description:
+        'Calls GET /v1/templates/{templateId}. Returns the full template record for a known id. Use this ' +
+        'instead of jsonfabrica_list_templates when you already have the `templateId` (e.g. from a prior ' +
+        'create/list call); it is also the recommended way to inspect current `body`/`tags`/`description` ' +
+        'before calling jsonfabrica_update_template, since update only shows you the fields you send, not the ' +
+        'result of merging them with what already exists. Read-only, no side effects.',
       inputSchema: {
         templateId: z.string().describe('ID of the template to fetch, as returned by create/list. Required.'),
       },
@@ -181,7 +196,14 @@ export function registerTemplateTools(server: McpServer, client: Client): void {
         idempotentHint: true,
         openWorldHint: true,
       },
-      description: 'Calls PUT /v1/templates/{templateId}. Only the provided fields are changed.',
+      description:
+        'Calls PUT /v1/templates/{templateId}. Partially updates an existing template in place: only the ' +
+        'fields you include in the call are changed, and every field you omit is left exactly as it was — ' +
+        'call jsonfabrica_get_template first if you need to see current values before deciding what to send. ' +
+        'Use this only for an existing `templateId`; to make a new template use jsonfabrica_create_template ' +
+        'instead (it does not modify or version the original). The change is applied immediately and ' +
+        'in-place with no version history — there is no undo, so if you need to keep the old `body`/`tags` ' +
+        'around, read and save them first.',
       inputSchema: {
         templateId: z.string().describe('ID of the template to update. Required.'),
         name: z
@@ -233,7 +255,14 @@ export function registerTemplateTools(server: McpServer, client: Client): void {
         idempotentHint: true,
         openWorldHint: true,
       },
-      description: 'Calls DELETE /v1/templates/{templateId}. Returns the removed template record.',
+      description:
+        'Calls DELETE /v1/templates/{templateId}. This is a soft delete: the template\'s `status` is set to ' +
+        '"archived" (it is not erased from storage), and the call returns the resulting archived template ' +
+        'record. Archived templates are excluded from jsonfabrica_list_templates by default — pass ' +
+        '`status: "archived"` there to find them again — and both jsonfabrica_get_template and ' +
+        'jsonfabrica_generate_from_template still work against the id afterwards, since archiving does not ' +
+        'block reads or generation. Use this when a template should stop showing up in normal listings; there ' +
+        'is currently no tool to restore an archived template back to `active`.',
       inputSchema: {
         templateId: z.string().describe('ID of the template to delete. Required.'),
       },
@@ -263,9 +292,13 @@ export function registerTemplateTools(server: McpServer, client: Client): void {
         openWorldHint: true,
       },
       description:
-        'Calls POST /v1/templates/{templateId}/generate. Generates a document using a persisted ' +
-        'template. Set `sequenceNamespace`/`variableNamespace` to isolate sequence/variable side ' +
-        'effects between environments.',
+        'Calls POST /v1/templates/{templateId}/generate. Generates a document from a persisted, saved ' +
+        'template referenced by `templateId` — use this (not jsonfabrica_generate_adhoc) when the template ' +
+        'is meant to be reused or shared across calls/tenants; use jsonfabrica_generate_adhoc instead when ' +
+        'you are still iterating on raw template syntax and don\'t want to persist anything yet. This call is ' +
+        'metered/billed like any generation and, unless namespaced, can advance real durable sequences and ' +
+        'mutate durable variables referenced by the template body. Set `sequenceNamespace`/`variableNamespace` ' +
+        'to isolate those side effects between environments (e.g. test vs. production).',
       inputSchema: {
         templateId: z.string().describe('ID of the persisted template to generate a document from. Required.'),
         seed: z
@@ -333,10 +366,12 @@ export function registerTemplateTools(server: McpServer, client: Client): void {
       },
       description:
         'Calls POST /v1/templates/generate. Generates a document directly from a raw `body` string ' +
-        'without creating a template record — useful for quickly iterating on template syntax. ' +
-        'Goes through the same billing/usage metering as persisted-template generation (not a free ' +
-        "bypass). createSeq()/durable sequence side effects still apply; set `sequenceNamespace`/ " +
-        '`variableNamespace` to e.g. "debug" to avoid colliding with real tenant sequences.',
+        'without creating a template record — prefer this over jsonfabrica_generate_from_template while ' +
+        'still iterating on template syntax; switch to jsonfabrica_create_template once the body is ready ' +
+        'to be reused or shared. Goes through the same billing/usage metering as persisted-template ' +
+        "generation (not a free bypass). createSeq()/durable sequence side effects still apply; set " +
+        '`sequenceNamespace`/`variableNamespace` to e.g. "debug" to avoid colliding with real tenant ' +
+        'sequences and variables.',
       inputSchema: {
         body: z
           .string()

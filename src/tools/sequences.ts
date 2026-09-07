@@ -17,7 +17,10 @@ export function registerSequenceTools(server: McpServer, client: Client): void {
       },
       description:
         'Calls POST /v1/sequences. Creates a durable named sequence (number/string/uuid), ' +
-        'referenced from template bodies via createSeq()/getSeq()-style functions.',
+        'referenced from template bodies via createSeq()/getSeq()-style functions. Fails with a 409-style ' +
+        'conflict error if a sequence with this `name` already exists for the tenant — use ' +
+        'jsonfabrica_update_sequence to change an existing one\'s `currentValue`/`step` instead of retrying ' +
+        'create with the same name.',
       inputSchema: {
         name: z
           .string()
@@ -72,7 +75,10 @@ export function registerSequenceTools(server: McpServer, client: Client): void {
         idempotentHint: true,
         openWorldHint: true,
       },
-      description: 'Calls GET /v1/sequences. Returns a page of sequences (`{ items, nextCursor }`).',
+      description:
+        'Calls GET /v1/sequences. Returns a page of sequences (`{ items, nextCursor }`). Use this to ' +
+        'discover sequence names when you don\'t already know one; if you know the exact `name`, call ' +
+        'jsonfabrica_get_sequence directly instead. Read-only, no side effects.',
       inputSchema: {
         cursor: z
           .string()
@@ -111,7 +117,10 @@ export function registerSequenceTools(server: McpServer, client: Client): void {
         idempotentHint: true,
         openWorldHint: true,
       },
-      description: 'Calls GET /v1/sequences/{name}. Returns the sequence record.',
+      description:
+        'Calls GET /v1/sequences/{name}. Returns the sequence record for a known `name`; use ' +
+        'jsonfabrica_list_sequences instead if you need to discover names. Read-only — does not advance the ' +
+        'sequence (use jsonfabrica_bump_sequence for that).',
       inputSchema: {
         name: z.string().describe('Exact name of the sequence to fetch, as given at creation. Required.'),
       },
@@ -136,7 +145,12 @@ export function registerSequenceTools(server: McpServer, client: Client): void {
         idempotentHint: true,
         openWorldHint: true,
       },
-      description: 'Calls PATCH /v1/sequences/{name}. Only the provided fields (currentValue, step) are changed.',
+      description:
+        'Calls PATCH /v1/sequences/{name}. Only the provided fields (currentValue, step) are changed; fields ' +
+        'you omit are left as-is. Use this when you need to set an explicit `currentValue` (e.g. resetting a ' +
+        'counter) or change the `step` amount — use jsonfabrica_bump_sequence instead when you just want to ' +
+        'advance the sequence by its existing configured step. This overwrites the sequence\'s stored state ' +
+        'in place immediately; there is no undo.',
       inputSchema: {
         name: z.string().describe('Exact name of the sequence to update. Required.'),
         currentValue: z
@@ -177,7 +191,12 @@ export function registerSequenceTools(server: McpServer, client: Client): void {
         idempotentHint: true,
         openWorldHint: true,
       },
-      description: 'Calls DELETE /v1/sequences/{name}. Returns no content on success.',
+      description:
+        'Calls DELETE /v1/sequences/{name}. This is a hard, permanent delete — unlike ' +
+        'jsonfabrica_delete_template\'s soft-delete/archive behavior, the sequence record is removed entirely ' +
+        'and cannot be recovered; there is no `status: "archived"` equivalent for sequences. Returns no ' +
+        'content on success. Any template body still calling createSeq()/getSeq() with this `name` afterwards ' +
+        'will no longer see the deleted history/state.',
       inputSchema: {
         name: z.string().describe('Exact name of the sequence to delete. Required.'),
       },
@@ -202,7 +221,12 @@ export function registerSequenceTools(server: McpServer, client: Client): void {
         idempotentHint: false,
         openWorldHint: true,
       },
-      description: 'Calls POST /v1/sequences/{name}/bump. Advances the sequence by its step and returns the updated record.',
+      description:
+        'Calls POST /v1/sequences/{name}/bump. Atomically advances the sequence by its configured `step` ' +
+        '(a permanent, irreversible change to the stored `currentValue`) and returns the updated record — ' +
+        'this is the same advance a template\'s createSeq()/getSeq() calls trigger during generation. Use ' +
+        'jsonfabrica_update_sequence instead if you need to set an explicit `currentValue`/`step` rather than ' +
+        'advancing by the existing step.',
       inputSchema: {
         name: z.string().describe('Exact name of the sequence to bump (advance by its configured step). Required.'),
       },

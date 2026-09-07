@@ -76,11 +76,14 @@ export function registerBatchTools(server: McpServer, client: Client): void {
         openWorldHint: true,
       },
       description:
-        'Calls POST /v1/batches. Generates multiple documents from one or more templates in one ' +
-        'call, optionally cross-referencing documents via `relations`. Small batches run ' +
-        'synchronously and the response is 200 with `results`; larger batches are queued and the ' +
-        'response is 202 with just `{ batchId, status, seed }` — poll jsonfabrica_get_batch for ' +
-        'the final results in that case.',
+        'Calls POST /v1/batches. Generates multiple documents from one or more persisted templates in one ' +
+        'call, optionally cross-referencing documents via `relations` — use this instead of looping ' +
+        'jsonfabrica_generate_from_template yourself when you need many documents or cross-document ' +
+        'relations in a single request. Small batches run synchronously and the response is 200 with ' +
+        '`results`; larger batches are queued and the response is 202 with just `{ batchId, status, seed }` ' +
+        '— poll jsonfabrica_get_batch for the final results in that case. Like a single generate call, this ' +
+        'is metered/billed per document produced and, unless namespaced, can advance real durable sequences ' +
+        'and mutate durable variables referenced by the templates.',
       inputSchema: {
         seed: z
           .number()
