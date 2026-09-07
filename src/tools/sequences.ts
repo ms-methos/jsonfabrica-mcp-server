@@ -24,16 +24,17 @@ export function registerSequenceTools(server: McpServer, client: Client): void {
           .describe(
             'Value kind the sequence produces on each bump: "number" increments `currentValue` by `step` and ' +
               'returns a numeric value; "string" behaves like "number" but the returned value is stringified; ' +
-              '"uuid" ignores `start`/`step` and returns a freshly generated UUID on each bump. Required.'
+              '"uuid" does not use `start`/`step` to derive values (but `start` must still be provided — see ' +
+              'its description); each bump returns a fresh UUID. Required.'
           ),
         start: z
           .number()
           .optional()
           .describe(
-            'Initial value of `currentValue` for "number"/"string" sequences (ignored for "uuid"). Marked ' +
-              'optional in this schema, but the server has no fallback default — omitting it causes the ' +
-              'gateway to reject the request with a 400 validation error, so it should be supplied for ' +
-              '"number"/"string" sequences.'
+            'Initial value of `currentValue` for "number"/"string" sequences. Marked optional in this schema, ' +
+              'but the gateway validates it as a required finite number for every sequence type — omitting ' +
+              'it always causes a 400 validation error, even for type "uuid". For "uuid" sequences the value ' +
+              'is stored but not used to derive the generated UUIDs.'
           ),
         step: z
           .number()
@@ -71,8 +72,8 @@ export function registerSequenceTools(server: McpServer, client: Client): void {
           .int()
           .optional()
           .describe(
-            'Maximum number of sequences to return in this page. Optional; defaults to 20 when omitted, ' +
-              'capped at a server-enforced maximum of 100.'
+            'Maximum number of sequences to return in this page. Optional; defaults to 20 when omitted. ' +
+              'Values <= 0 or > 100 are not clamped — the request is rejected with a 400 validation error.'
           ),
       },
     },

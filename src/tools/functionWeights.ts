@@ -40,7 +40,8 @@ export function registerFunctionWeightTools(server: McpServer, client: Client): 
             'New billing weight for this function: the number of usage units consumed each time the function ' +
               'is invoked during generation (metered to Stripe as "weight-units-consumed", additive across a ' +
               "document's generated calls — it is not a percentage or ratio relative to other functions). " +
-              'Platform defaults are 10 for most generator functions. Must be a positive finite number ' +
+              'Platform defaults are 10 for most generator functions, except createSeq, getSeq, and getContext, ' +
+              'which default to 1000. Must be a positive finite number ' +
               '(<= 0, NaN, or Infinity are rejected with a 400 validation error). Required — this call always ' +
               'replaces the current weight, there is no partial/omitted-field behaviour.'
           ),

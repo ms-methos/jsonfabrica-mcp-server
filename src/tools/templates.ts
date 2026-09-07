@@ -115,8 +115,8 @@ export function registerTemplateTools(server: McpServer, client: Client): void {
           .int()
           .optional()
           .describe(
-            'Maximum number of templates to return in this page. Optional; defaults to 20 when omitted, ' +
-              'capped at a server-enforced maximum of 100.'
+            'Maximum number of templates to return in this page. Optional; defaults to 20 when omitted. ' +
+              'Values <= 0 or > 100 are not clamped — the request is rejected with a 400 validation error.'
           ),
       },
     },
