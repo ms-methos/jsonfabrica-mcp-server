@@ -2,3 +2,9 @@ node_modules
 dist
 .env
 *.log
+
+# Test sources live locally / in CI only, not in the published repo tree
+*.test.ts
+
+# Agent-generated verification docs
+testcases/
