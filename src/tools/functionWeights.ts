@@ -28,8 +28,22 @@ export function registerFunctionWeightTools(server: McpServer, client: Client): 
       title: 'Update a JsonFabrica generator function weight (admin)',
       description: `Calls PATCH /v1/admin/function-weights/{functionName}. ${ADMIN_NOTE}`,
       inputSchema: {
-        functionName: z.string(),
-        weight: z.number(),
+        functionName: z
+          .string()
+          .describe(
+            'Exact name of the generator function to reweight, e.g. "getRandomFullName" or "getRandomNumber" ' +
+              '(must match a name already returned by jsonfabrica_list_function_weights — unknown names return 404). Required.'
+          ),
+        weight: z
+          .number()
+          .describe(
+            'New billing weight for this function: the number of usage units consumed each time the function ' +
+              'is invoked during generation (metered to Stripe as "weight-units-consumed", additive across a ' +
+              "document's generated calls — it is not a percentage or ratio relative to other functions). " +
+              'Platform defaults are 10 for most generator functions. Must be a positive finite number ' +
+              '(<= 0, NaN, or Infinity are rejected with a 400 validation error). Required — this call always ' +
+              'replaces the current weight, there is no partial/omitted-field behaviour.'
+          ),
       },
     },
     async ({ functionName, weight }) => {
