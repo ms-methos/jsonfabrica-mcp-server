@@ -3,6 +3,18 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { Client } from '../client.js';
 import { ok, fail } from './respond.js';
 
+// Mirrors SequenceDto in api-docs/openapi-external-gateway.yaml.
+const sequenceDtoShape = {
+  tenantId: z.string().describe('Owning tenant id.'),
+  name: z.string().describe('Sequence name.'),
+  type: z.enum(['number', 'string', 'uuid']).describe('Value kind produced on each bump.'),
+  currentValue: z.number().describe('Current stored counter value (unused by "uuid" sequences).'),
+  start: z.number().optional().describe('Initial value the sequence was created with.'),
+  step: z.number().optional().describe('Increment applied per bump (ignored for "uuid").'),
+  createdAt: z.string().describe('ISO-8601 creation timestamp.'),
+  updatedAt: z.string().describe('ISO-8601 last-update timestamp.'),
+};
+
 export function registerSequenceTools(server: McpServer, client: Client): void {
   server.registerTool(
     'jsonfabrica_create_sequence',
@@ -54,6 +66,7 @@ export function registerSequenceTools(server: McpServer, client: Client): void {
               'for "uuid"). Optional; defaults to 1 when omitted. May be negative to count down.'
           ),
       },
+      outputSchema: sequenceDtoShape,
     },
     async (args) => {
       try {
@@ -96,6 +109,10 @@ export function registerSequenceTools(server: McpServer, client: Client): void {
               'Values <= 0 or > 100 are not clamped — the request is rejected with a 400 validation error.'
           ),
       },
+      outputSchema: {
+        items: z.array(z.object(sequenceDtoShape)).describe('Page of matching sequences.'),
+        nextCursor: z.string().optional().describe('Pass to `cursor` on the next call; absent on the last page.'),
+      },
     },
     async (args) => {
       try {
@@ -124,6 +141,7 @@ export function registerSequenceTools(server: McpServer, client: Client): void {
       inputSchema: {
         name: z.string().describe('Exact name of the sequence to fetch, as given at creation. Required.'),
       },
+      outputSchema: sequenceDtoShape,
     },
     async ({ name }) => {
       try {
@@ -170,6 +188,7 @@ export function registerSequenceTools(server: McpServer, client: Client): void {
               'left unchanged.'
           ),
       },
+      outputSchema: sequenceDtoShape,
     },
     async ({ name, ...body }) => {
       try {
@@ -230,6 +249,7 @@ export function registerSequenceTools(server: McpServer, client: Client): void {
       inputSchema: {
         name: z.string().describe('Exact name of the sequence to bump (advance by its configured step). Required.'),
       },
+      outputSchema: sequenceDtoShape,
     },
     async ({ name }) => {
       try {

@@ -5,6 +5,14 @@ import { ok, fail } from './respond.js';
 
 const ADMIN_NOTE = 'Requires the configured API key to have role=admin — the gateway returns 403 otherwise.';
 
+// Mirrors FunctionWeightDto in api-docs/openapi-external-gateway.yaml.
+const functionWeightDtoShape = {
+  functionName: z.string().describe('Name of the generator function, e.g. "getRandomFullName".'),
+  weight: z.number().describe('Usage units consumed each time the function is invoked during generation.'),
+  updatedAt: z.string().describe('ISO-8601 timestamp of the last weight change.'),
+  updatedBy: z.string().optional().nullable().describe('Tenant id that last changed the weight, if any.'),
+};
+
 export function registerFunctionWeightTools(server: McpServer, client: Client): void {
   server.registerTool(
     'jsonfabrica_list_function_weights',
@@ -19,6 +27,14 @@ export function registerFunctionWeightTools(server: McpServer, client: Client): 
       },
       description: `Calls GET /v1/admin/function-weights. ${ADMIN_NOTE}`,
       inputSchema: {},
+      outputSchema: {
+        items: z
+          .array(z.object(functionWeightDtoShape))
+          .describe(
+            'All configured function weights. The gateway itself returns a bare JSON array; it is wrapped ' +
+              'under `items` here for `structuredContent` (the raw array is still what `content[0].text` shows).'
+          ),
+      },
     },
     async () => {
       try {
@@ -60,6 +76,7 @@ export function registerFunctionWeightTools(server: McpServer, client: Client): 
               'replaces the current weight, there is no partial/omitted-field behaviour.'
           ),
       },
+      outputSchema: functionWeightDtoShape,
     },
     async ({ functionName, weight }) => {
       try {

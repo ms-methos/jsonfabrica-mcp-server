@@ -37,6 +37,35 @@ const generateOptionsSchema = z
       'only create the template record with no generation side effects.'
   );
 
+// Mirrors TemplateDto in api-docs/openapi-external-gateway.yaml.
+const templateDtoShape = {
+  templateId: z.string().describe('Server-assigned template id.'),
+  tenantId: z.string().describe('Owning tenant id.'),
+  name: z.string().describe('Template name.'),
+  description: z.string().optional().nullable().describe('Free-text description, if any was stored.'),
+  body: z.string().describe('Template body containing function-call placeholders.'),
+  astCache: z.array(z.unknown()).optional().nullable().describe('Server-internal parsed-body cache; opaque to callers.'),
+  tags: z.array(z.string()).optional().describe('Tags stored on the template.'),
+  validated: z.boolean().optional().describe('Whether the body passed static template validation.'),
+  warnings: z.array(z.string()).optional().describe('Non-fatal validation warnings, if any.'),
+  status: z.enum(['active', 'archived']).describe('"active" unless soft-deleted via jsonfabrica_delete_template.'),
+  createdAt: z.string().describe('ISO-8601 creation timestamp.'),
+  updatedAt: z.string().describe('ISO-8601 last-update timestamp.'),
+};
+
+// Mirrors GenerateResponseDto / AdhocGenerateResponseDto — fields present depend on which endpoint was called.
+const generationResultShape = {
+  data: z.unknown().describe('The generated document; shape is entirely determined by the template body.'),
+  meta: z
+    .object({
+      seed: z.number().optional().describe('PRNG seed actually used for this generation.'),
+      templateId: z.string().optional().describe('Present when generated from a persisted template.'),
+      generatedAt: z.string().optional().describe('ISO-8601 timestamp of generation.'),
+      documentSeed: z.number().optional().describe('Per-document seed, present for some generation paths.'),
+    })
+    .describe('Generation metadata.'),
+};
+
 export function registerTemplateTools(server: McpServer, client: Client): void {
   server.registerTool(
     'jsonfabrica_create_template',
@@ -75,6 +104,27 @@ export function registerTemplateTools(server: McpServer, client: Client): void {
               'template must contain every requested tag). Optional; omitted or empty means no tags stored.'
           ),
         generate: generateOptionsSchema,
+      },
+      outputSchema: {
+        // Plain TemplateDto fields when `generate` was omitted...
+        ...templateDtoShape,
+        templateId: templateDtoShape.templateId.optional(),
+        tenantId: templateDtoShape.tenantId.optional(),
+        name: templateDtoShape.name.optional(),
+        body: templateDtoShape.body.optional(),
+        status: templateDtoShape.status.optional(),
+        createdAt: templateDtoShape.createdAt.optional(),
+        updatedAt: templateDtoShape.updatedAt.optional(),
+        // ...or { template, generation | generationError } when `generate` was present.
+        template: z.object(templateDtoShape).optional().describe('Present when `generate` was passed; the created template record.'),
+        generation: z
+          .object(generationResultShape)
+          .optional()
+          .describe('Present when `generate` was passed and the immediate generation succeeded.'),
+        generationError: z
+          .object({ code: z.string(), message: z.string() })
+          .optional()
+          .describe('Present when `generate` was passed but the immediate generation failed at runtime (template was still created).'),
       },
     },
     async (args) => {
@@ -143,6 +193,10 @@ export function registerTemplateTools(server: McpServer, client: Client): void {
               'Values <= 0 or > 100 are not clamped — the request is rejected with a 400 validation error.'
           ),
       },
+      outputSchema: {
+        items: z.array(z.object(templateDtoShape)).describe('Page of matching templates.'),
+        nextCursor: z.string().optional().describe('Pass to `cursor` on the next call to fetch the following page; absent on the last page.'),
+      },
     },
     async (args) => {
       try {
@@ -174,6 +228,7 @@ export function registerTemplateTools(server: McpServer, client: Client): void {
       inputSchema: {
         templateId: z.string().describe('ID of the template to fetch, as returned by create/list. Required.'),
       },
+      outputSchema: templateDtoShape,
     },
     async ({ templateId }) => {
       try {
@@ -229,6 +284,7 @@ export function registerTemplateTools(server: McpServer, client: Client): void {
               'the current tags unchanged; pass an empty array to clear all tags.'
           ),
       },
+      outputSchema: templateDtoShape,
     },
     async ({ templateId, ...body }) => {
       try {
@@ -266,6 +322,7 @@ export function registerTemplateTools(server: McpServer, client: Client): void {
       inputSchema: {
         templateId: z.string().describe('ID of the template to delete. Required.'),
       },
+      outputSchema: templateDtoShape,
     },
     async ({ templateId }) => {
       try {
@@ -338,6 +395,7 @@ export function registerTemplateTools(server: McpServer, client: Client): void {
               'Optional; omitted means the default (unnamespaced) variable scope is used.'
           ),
       },
+      outputSchema: generationResultShape,
     },
     async ({ templateId, ...body }) => {
       try {
@@ -417,6 +475,7 @@ export function registerTemplateTools(server: McpServer, client: Client): void {
               'Optional; omitted means the default (unnamespaced) variable scope is used.'
           ),
       },
+      outputSchema: generationResultShape,
     },
     async (args) => {
       try {

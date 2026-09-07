@@ -1,6 +1,7 @@
+import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { Client } from '../client.js';
-import { describeError } from '../errors.js';
+import { ok, fail } from './respond.js';
 
 export function registerUsageTools(server: McpServer, client: Client): void {
   server.registerTool(
@@ -16,13 +17,18 @@ export function registerUsageTools(server: McpServer, client: Client): void {
       },
       description: 'Calls GET /v1/usage. Returns `{ tenantId, usageTotal, asOf }` for the configured API key.',
       inputSchema: {},
+      outputSchema: {
+        tenantId: z.string().describe('Tenant id the usage totals belong to.'),
+        usageTotal: z.number().describe('Cumulative metered usage units consumed by this tenant.'),
+        asOf: z.string().describe('ISO-8601 timestamp the usage total was computed as of.'),
+      },
     },
     async () => {
       try {
         const result = await client.request({ method: 'GET', path: '/v1/usage' });
-        return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+        return ok(result);
       } catch (err) {
-        return { isError: true, content: [{ type: 'text', text: describeError(err) }] };
+        return fail(err);
       }
     }
   );

@@ -22,6 +22,21 @@ test('ok() produces a valid MCP TextContent block for every result shape', () =>
   }
 });
 
+test('ok() attaches structuredContent matching the raw result for object results', () => {
+  const response = ok({ id: 'seq_1', name: 'orders' });
+  assert.deepEqual((response as { structuredContent?: unknown }).structuredContent, { id: 'seq_1', name: 'orders' });
+});
+
+test('ok() wraps a bare-array result as { items: [...] } for structuredContent (outputSchema must be an object shape)', () => {
+  const response = ok([1, 2, 3]);
+  assert.deepEqual((response as { structuredContent?: unknown }).structuredContent, { items: [1, 2, 3] });
+});
+
+test('ok(undefined) never attaches structuredContent (204/no-body case — tool must have no outputSchema)', () => {
+  const response = ok(undefined);
+  assert.equal('structuredContent' in response, false);
+});
+
 test('ok(undefined) never returns the bare JS value undefined as text (regression for DELETE 204 crash)', () => {
   const response = ok(undefined);
   // The bug: JSON.stringify(undefined, null, 2) === undefined (not a string),

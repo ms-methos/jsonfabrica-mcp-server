@@ -63,6 +63,26 @@ const batchDocumentSpecSchema = z.object({
     ),
 });
 
+// Mirrors BatchDocumentDto in api-docs/openapi-external-gateway.yaml.
+const batchDocumentDtoShape = {
+  batchId: z.string().describe('Id of the batch this document belongs to.'),
+  alias: z.string().describe('The `documents[]` alias this document was generated for.'),
+  seqNo: z.number().int().describe('0-based index of this document within its alias group.'),
+  templateId: z.string().describe('Template used to generate this document.'),
+  status: z.enum(['pending', 'completed', 'failed']).describe('Per-document generation status.'),
+  result: z.unknown().optional().describe('The generated document; shape depends on the template body. Absent while pending/failed.'),
+  documentSeed: z.number().optional().describe('Per-document PRNG seed actually used.'),
+};
+
+// Response shape varies by whether the batch ran sync (200) or was queued (202) — see create_batch description.
+const createBatchOutputShape = {
+  batchId: z.string().optional().describe('Id of the created batch.'),
+  status: z.enum(['queued', 'running', 'completed', 'failed']).optional().describe('Batch status at response time.'),
+  seed: z.number().optional().describe('PRNG seed used/assigned for the whole batch.'),
+  results: z.array(z.object(batchDocumentDtoShape)).optional().describe('Present only for synchronous (200) responses.'),
+  error: z.object({ code: z.string(), message: z.string() }).optional().describe('Present if the whole batch failed.'),
+};
+
 export function registerBatchTools(server: McpServer, client: Client): void {
   server.registerTool(
     'jsonfabrica_create_batch',
@@ -117,6 +137,7 @@ export function registerBatchTools(server: McpServer, client: Client): void {
               'aliases they depend on).'
           ),
       },
+      outputSchema: createBatchOutputShape,
     },
     async (args) => {
       try {
@@ -143,6 +164,15 @@ export function registerBatchTools(server: McpServer, client: Client): void {
         'documents. Use this to poll a batch that was accepted asynchronously (202).',
       inputSchema: {
         batchId: z.string().describe('ID of the batch job to fetch, as returned by jsonfabrica_create_batch. Required.'),
+      },
+      outputSchema: {
+        batchId: z.string().describe('Id of the fetched batch.'),
+        tenantId: z.string().optional().describe('Owning tenant id.'),
+        seed: z.number().optional().describe('PRNG seed used for the whole batch.'),
+        status: z.enum(['queued', 'running', 'completed', 'failed']).describe('Current batch status.'),
+        spec: z.unknown().optional().describe('The original BatchSpec request body this batch was created from.'),
+        documents: z.array(z.object(batchDocumentDtoShape)).optional().describe('Generated documents, once available.'),
+        error: z.object({ code: z.string(), message: z.string() }).optional().describe('Present if the whole batch failed.'),
       },
     },
     async ({ batchId }) => {

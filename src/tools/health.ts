@@ -1,6 +1,7 @@
+import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { Client } from '../client.js';
-import { describeError } from '../errors.js';
+import { ok, fail } from './respond.js';
 
 export function registerHealthTool(server: McpServer, client: Client): void {
   server.registerTool(
@@ -18,13 +19,17 @@ export function registerHealthTool(server: McpServer, client: Client): void {
         'Calls GET /health on the JsonFabrica gateway. No authentication required. ' +
         'Use this to verify JSONFABRICA_API_URL points at a reachable gateway.',
       inputSchema: {},
+      outputSchema: {
+        status: z.string().describe('Liveness indicator, e.g. "ok".'),
+        service: z.string().optional().describe('Name of the responding service, e.g. "svc-gateway".'),
+      },
     },
     async () => {
       try {
         const result = await client.request({ method: 'GET', path: '/health', noAuth: true });
-        return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+        return ok(result);
       } catch (err) {
-        return { isError: true, content: [{ type: 'text', text: describeError(err) }] };
+        return fail(err);
       }
     }
   );
