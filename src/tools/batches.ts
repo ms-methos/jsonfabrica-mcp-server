@@ -68,6 +68,13 @@ export function registerBatchTools(server: McpServer, client: Client): void {
     'jsonfabrica_create_batch',
     {
       title: 'Create a JsonFabrica batch generation job',
+      annotations: {
+        title: 'Create a JsonFabrica batch generation job',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: true,
+      },
       description:
         'Calls POST /v1/batches. Generates multiple documents from one or more templates in one ' +
         'call, optionally cross-referencing documents via `relations`. Small batches run ' +
@@ -121,6 +128,13 @@ export function registerBatchTools(server: McpServer, client: Client): void {
     'jsonfabrica_get_batch',
     {
       title: 'Get a JsonFabrica batch',
+      annotations: {
+        title: 'Get a JsonFabrica batch',
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
       description:
         'Calls GET /v1/batches/{batchId}. Returns batch status and, once complete, the generated ' +
         'documents. Use this to poll a batch that was accepted asynchronously (202).',

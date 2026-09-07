@@ -7,6 +7,13 @@ export function registerUsageTools(server: McpServer, client: Client): void {
     'jsonfabrica_get_usage',
     {
       title: 'Get JsonFabrica tenant usage',
+      annotations: {
+        title: 'Get JsonFabrica tenant usage',
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
       description: 'Calls GET /v1/usage. Returns `{ tenantId, usageTotal, asOf }` for the configured API key.',
       inputSchema: {},
     },

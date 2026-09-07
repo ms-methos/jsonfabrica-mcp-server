@@ -7,6 +7,13 @@ export function registerAuthTools(server: McpServer, client: Client): void {
     'jsonfabrica_whoami',
     {
       title: 'JsonFabrica whoami',
+      annotations: {
+        title: 'JsonFabrica whoami',
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
       description:
         'Calls GET /v1/whoami on the JsonFabrica gateway using the configured API key. ' +
         'Returns { tenantId, role } for the configured JSONFABRICA_API_KEY.',

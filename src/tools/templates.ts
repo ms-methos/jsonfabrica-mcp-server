@@ -42,6 +42,13 @@ export function registerTemplateTools(server: McpServer, client: Client): void {
     'jsonfabrica_create_template',
     {
       title: 'Create a JsonFabrica template',
+      annotations: {
+        title: 'Create a JsonFabrica template',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: true,
+      },
       description:
         'Calls POST /v1/templates. Creates a reusable template. `body` uses ' +
         "JsonFabrica's function-call placeholder syntax, e.g. \"Hello {{getRandomFullName()}}\" " +
@@ -80,6 +87,13 @@ export function registerTemplateTools(server: McpServer, client: Client): void {
     'jsonfabrica_list_templates',
     {
       title: 'List JsonFabrica templates',
+      annotations: {
+        title: 'List JsonFabrica templates',
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
       description: 'Calls GET /v1/templates. Returns a page of templates (`{ items, nextCursor }`).',
       inputSchema: {
         name: z
@@ -134,6 +148,13 @@ export function registerTemplateTools(server: McpServer, client: Client): void {
     'jsonfabrica_get_template',
     {
       title: 'Get a JsonFabrica template',
+      annotations: {
+        title: 'Get a JsonFabrica template',
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
       description: 'Calls GET /v1/templates/{templateId}. Returns the full template record.',
       inputSchema: {
         templateId: z.string().describe('ID of the template to fetch, as returned by create/list. Required.'),
@@ -153,6 +174,13 @@ export function registerTemplateTools(server: McpServer, client: Client): void {
     'jsonfabrica_update_template',
     {
       title: 'Update a JsonFabrica template',
+      annotations: {
+        title: 'Update a JsonFabrica template',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
       description: 'Calls PUT /v1/templates/{templateId}. Only the provided fields are changed.',
       inputSchema: {
         templateId: z.string().describe('ID of the template to update. Required.'),
@@ -198,6 +226,13 @@ export function registerTemplateTools(server: McpServer, client: Client): void {
     'jsonfabrica_delete_template',
     {
       title: 'Delete a JsonFabrica template',
+      annotations: {
+        title: 'Delete a JsonFabrica template',
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
       description: 'Calls DELETE /v1/templates/{templateId}. Returns the removed template record.',
       inputSchema: {
         templateId: z.string().describe('ID of the template to delete. Required.'),
@@ -220,6 +255,13 @@ export function registerTemplateTools(server: McpServer, client: Client): void {
     'jsonfabrica_generate_from_template',
     {
       title: 'Generate a document from a JsonFabrica template',
+      annotations: {
+        title: 'Generate a document from a JsonFabrica template',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: true,
+      },
       description:
         'Calls POST /v1/templates/{templateId}/generate. Generates a document using a persisted ' +
         'template. Set `sequenceNamespace`/`variableNamespace` to isolate sequence/variable side ' +
@@ -282,6 +324,13 @@ export function registerTemplateTools(server: McpServer, client: Client): void {
     'jsonfabrica_generate_adhoc',
     {
       title: 'Generate a document from a raw template body (no persistence)',
+      annotations: {
+        title: 'Generate a document from a raw template body (no persistence)',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: true,
+      },
       description:
         'Calls POST /v1/templates/generate. Generates a document directly from a raw `body` string ' +
         'without creating a template record — useful for quickly iterating on template syntax. ' +

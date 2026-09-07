@@ -7,6 +7,13 @@ export function registerHealthTool(server: McpServer, client: Client): void {
     'jsonfabrica_health',
     {
       title: 'JsonFabrica health check',
+      annotations: {
+        title: 'JsonFabrica health check',
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
       description:
         'Calls GET /health on the JsonFabrica gateway. No authentication required. ' +
         'Use this to verify JSONFABRICA_API_URL points at a reachable gateway.',

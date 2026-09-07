@@ -10,6 +10,13 @@ export function registerFunctionWeightTools(server: McpServer, client: Client): 
     'jsonfabrica_list_function_weights',
     {
       title: 'List JsonFabrica generator function weights (admin)',
+      annotations: {
+        title: 'List JsonFabrica generator function weights (admin)',
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
       description: `Calls GET /v1/admin/function-weights. ${ADMIN_NOTE}`,
       inputSchema: {},
     },
@@ -26,6 +33,13 @@ export function registerFunctionWeightTools(server: McpServer, client: Client): 
     'jsonfabrica_update_function_weight',
     {
       title: 'Update a JsonFabrica generator function weight (admin)',
+      annotations: {
+        title: 'Update a JsonFabrica generator function weight (admin)',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
       description: `Calls PATCH /v1/admin/function-weights/{functionName}. ${ADMIN_NOTE}`,
       inputSchema: {
         functionName: z

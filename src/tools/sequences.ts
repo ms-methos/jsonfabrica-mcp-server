@@ -8,6 +8,13 @@ export function registerSequenceTools(server: McpServer, client: Client): void {
     'jsonfabrica_create_sequence',
     {
       title: 'Create a JsonFabrica sequence',
+      annotations: {
+        title: 'Create a JsonFabrica sequence',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: true,
+      },
       description:
         'Calls POST /v1/sequences. Creates a durable named sequence (number/string/uuid), ' +
         'referenced from template bodies via createSeq()/getSeq()-style functions.',
@@ -58,6 +65,13 @@ export function registerSequenceTools(server: McpServer, client: Client): void {
     'jsonfabrica_list_sequences',
     {
       title: 'List JsonFabrica sequences',
+      annotations: {
+        title: 'List JsonFabrica sequences',
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
       description: 'Calls GET /v1/sequences. Returns a page of sequences (`{ items, nextCursor }`).',
       inputSchema: {
         cursor: z
@@ -90,6 +104,13 @@ export function registerSequenceTools(server: McpServer, client: Client): void {
     'jsonfabrica_get_sequence',
     {
       title: 'Get a JsonFabrica sequence',
+      annotations: {
+        title: 'Get a JsonFabrica sequence',
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
       description: 'Calls GET /v1/sequences/{name}. Returns the sequence record.',
       inputSchema: {
         name: z.string().describe('Exact name of the sequence to fetch, as given at creation. Required.'),
@@ -108,6 +129,13 @@ export function registerSequenceTools(server: McpServer, client: Client): void {
     'jsonfabrica_update_sequence',
     {
       title: 'Update a JsonFabrica sequence',
+      annotations: {
+        title: 'Update a JsonFabrica sequence',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
       description: 'Calls PATCH /v1/sequences/{name}. Only the provided fields (currentValue, step) are changed.',
       inputSchema: {
         name: z.string().describe('Exact name of the sequence to update. Required.'),
@@ -142,6 +170,13 @@ export function registerSequenceTools(server: McpServer, client: Client): void {
     'jsonfabrica_delete_sequence',
     {
       title: 'Delete a JsonFabrica sequence',
+      annotations: {
+        title: 'Delete a JsonFabrica sequence',
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
       description: 'Calls DELETE /v1/sequences/{name}. Returns no content on success.',
       inputSchema: {
         name: z.string().describe('Exact name of the sequence to delete. Required.'),
@@ -160,6 +195,13 @@ export function registerSequenceTools(server: McpServer, client: Client): void {
     'jsonfabrica_bump_sequence',
     {
       title: 'Bump a JsonFabrica sequence',
+      annotations: {
+        title: 'Bump a JsonFabrica sequence',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: true,
+      },
       description: 'Calls POST /v1/sequences/{name}/bump. Advances the sequence by its step and returns the updated record.',
       inputSchema: {
         name: z.string().describe('Exact name of the sequence to bump (advance by its configured step). Required.'),
