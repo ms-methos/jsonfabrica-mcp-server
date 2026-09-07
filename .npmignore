@@ -1,0 +1,7 @@
+# Published package ships compiled runtime only (see "files": ["dist"]).
+# Backstop in case a test build left artifacts in dist/ (prepack normally
+# rebuilds test-free, but this covers `npm publish --ignore-scripts`).
+*.test.js
+*.test.d.ts
+*.test.js.map
+tsconfig.test.json
