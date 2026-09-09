@@ -1,6 +1,6 @@
 {
   "name": "@jsonfabrica/mcp-server",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "mcpName": "io.github.ms-methos/jsonfabrica-mcp-server",
   "description": "MCP server that wraps the JsonFabrica gateway REST API as MCP tools over stdio.",
   "bin": {

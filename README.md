@@ -128,15 +128,6 @@ it's authoring reference, not something this server exposes as tools.
 |---|---|
 | `jsonfabrica_get_usage` | `GET /v1/usage` — returns `{ tenantId, usageTotal, asOf }` |
 
-### Admin — function weights
-
-Requires an API key with `role=admin`; the gateway returns 403 otherwise.
-
-| Tool | Endpoint |
-|---|---|
-| `jsonfabrica_list_function_weights` | `GET /v1/admin/function-weights` |
-| `jsonfabrica_update_function_weight` | `PATCH /v1/admin/function-weights/{functionName}` |
-
 ### Explicitly out of scope
 
 - `POST /v1/signup` and `PATCH /v1/billing/tier` — unauthenticated

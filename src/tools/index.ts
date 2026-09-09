@@ -6,7 +6,6 @@ import { registerTemplateTools } from './templates.js';
 import { registerSequenceTools } from './sequences.js';
 import { registerBatchTools } from './batches.js';
 import { registerUsageTools } from './usage.js';
-import { registerFunctionWeightTools } from './functionWeights.js';
 
 /**
  * Registers every tool module against the given McpServer instance.
@@ -19,5 +18,4 @@ export function registerAllTools(server: McpServer, client: Client): void {
   registerSequenceTools(server, client);
   registerBatchTools(server, client);
   registerUsageTools(server, client);
-  registerFunctionWeightTools(server, client);
 }

@@ -18,7 +18,7 @@ import { describeError } from '../errors.js';
  * against it — a text-only response is rejected with "Invalid structured
  * content". `ok()` attaches `structuredContent` whenever `result` is
  * defined. `outputSchema` (like `inputSchema`) must be a plain object shape,
- * so a bare-array gateway response (e.g. `list_function_weights`) is wrapped
+ * so a bare-array gateway response (e.g. a hypothetical `list_widgets`) is wrapped
  * as `{ items: result }` to match its `{ items: [...] }` outputSchema; other
  * results are already response objects and are passed through as-is.
  * Tools with no meaningful response body (e.g. `jsonfabrica_delete_sequence`,
