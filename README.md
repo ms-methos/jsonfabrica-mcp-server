@@ -144,7 +144,7 @@ with a readable message — it never throws out of the handler or crashes the ho
 process. Common cases:
 
 - **401** → "Invalid or missing API key — check JSONFABRICA_API_KEY."
-- **403** (admin tools) → "This API key does not have admin role."
+- **403** → the API key's tenant is not allowed to perform the call.
 - **402** (blocked account) → the upstream `blockReason` is passed through.
 - Network failure (gateway unreachable) → a message naming the configured
   `JSONFABRICA_API_URL`.
@@ -157,7 +157,8 @@ process. Common cases:
 - **Connection refused / UPSTREAM_UNREACHABLE** → check `JSONFABRICA_API_URL` and
   that the gateway is actually running and reachable from wherever this process
   runs.
-- **403 on admin tools** → your API key's tenant doesn't have `role=admin`.
+- **403 / FORBIDDEN** → your API key's tenant is not permitted to perform that
+  call.
 
 ## Development
 

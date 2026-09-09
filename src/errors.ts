@@ -28,7 +28,7 @@ export function describeError(err: unknown): string {
     return 'Invalid or missing API key — check JSONFABRICA_API_KEY.';
   }
   if (e.httpStatus === 403 || e.code === 'FORBIDDEN') {
-    return 'This API key does not have admin role.';
+    return 'Forbidden — this API key is not permitted to perform that operation.';
   }
   if (e.httpStatus === 402) {
     const details = e.details as { blockReason?: string } | undefined;
