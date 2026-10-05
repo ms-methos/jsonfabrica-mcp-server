@@ -63,25 +63,43 @@ const batchDocumentSpecSchema = z.object({
     ),
 });
 
-// Mirrors BatchDocumentDto in api-docs/openapi-external-gateway.yaml.
-const batchDocumentDtoShape = {
-  batchId: z.string().describe('Id of the batch this document belongs to.'),
-  alias: z.string().describe('The `documents[]` alias this document was generated for.'),
-  seqNo: z.number().int().describe('0-based index of this document within its alias group.'),
-  templateId: z.string().describe('Template used to generate this document.'),
-  status: z.enum(['pending', 'completed', 'failed']).describe('Per-document generation status.'),
-  result: z.unknown().optional().describe('The generated document; shape depends on the template body. Absent while pending/failed.'),
-  documentSeed: z.number().optional().describe('Per-document PRNG seed actually used.'),
-};
+// Mirrors svc-batches' BatchStatusResponse, returned unchanged (via the gateway proxy) by
+// POST /v1/batches (200 sync / 202 async) and GET /v1/batches/{batchId} (200).
+// Objects use `.passthrough()` so fields the API may add later don't fail the SDK's output validation.
+const batchErrorSchema = z
+  .object({
+    code: z.string().describe('Machine-readable error code, e.g. "GENERATION_FAILED" or "INTERNAL_ERROR".'),
+    message: z.string().describe('Human-readable description of why the batch failed.'),
+  })
+  .passthrough()
+  .describe('Present only when `status` is "failed": why the whole batch failed.');
 
-// Response shape varies by whether the batch ran sync (200) or was queued (202) — see create_batch description.
-const createBatchOutputShape = {
-  batchId: z.string().optional().describe('Id of the created batch.'),
-  status: z.enum(['queued', 'running', 'completed', 'failed']).optional().describe('Batch status at response time.'),
-  seed: z.number().optional().describe('PRNG seed used/assigned for the whole batch.'),
-  results: z.array(z.object(batchDocumentDtoShape)).optional().describe('Present only for synchronous (200) responses.'),
-  error: z.object({ code: z.string(), message: z.string() }).optional().describe('Present if the whole batch failed.'),
-};
+const generatedDocumentSchema = z
+  .unknown()
+  .describe(
+    'One generated document exactly as the template rendered it — usually a JSON object, but any JSON value ' +
+      'the template body produces. Fields listed in `relations` are already filled in.'
+  );
+
+const batchResultsSchema = z
+  .record(
+    z.string(),
+    z.array(generatedDocumentSchema).describe('Generated documents for this alias, in order (index 0..count-1).')
+  )
+  .describe(
+    'Generated documents grouped by alias, e.g. results.order[] is the array of generated "order" documents. ' +
+      'Present only once `status` is "completed".'
+  );
+
+const batchResponseSchema = z
+  .object({
+    batchId: z.string().describe('Id of the batch; pass it to jsonfabrica_get_batch to poll.'),
+    status: z.enum(['queued', 'running', 'completed', 'failed']).describe('Batch status at response time.'),
+    seed: z.number().optional().describe('PRNG seed used/assigned for the whole batch.'),
+    results: batchResultsSchema.optional(),
+    error: batchErrorSchema.optional(),
+  })
+  .passthrough();
 
 export function registerBatchTools(server: McpServer, client: Client): void {
   server.registerTool(
@@ -137,7 +155,7 @@ export function registerBatchTools(server: McpServer, client: Client): void {
               'aliases they depend on).'
           ),
       },
-      outputSchema: createBatchOutputShape,
+      outputSchema: batchResponseSchema,
     },
     async (args) => {
       try {
@@ -165,15 +183,7 @@ export function registerBatchTools(server: McpServer, client: Client): void {
       inputSchema: {
         batchId: z.string().describe('ID of the batch job to fetch, as returned by jsonfabrica_create_batch. Required.'),
       },
-      outputSchema: {
-        batchId: z.string().describe('Id of the fetched batch.'),
-        tenantId: z.string().optional().describe('Owning tenant id.'),
-        seed: z.number().optional().describe('PRNG seed used for the whole batch.'),
-        status: z.enum(['queued', 'running', 'completed', 'failed']).describe('Current batch status.'),
-        spec: z.unknown().optional().describe('The original BatchSpec request body this batch was created from.'),
-        documents: z.array(z.object(batchDocumentDtoShape)).optional().describe('Generated documents, once available.'),
-        error: z.object({ code: z.string(), message: z.string() }).optional().describe('Present if the whole batch failed.'),
-      },
+      outputSchema: batchResponseSchema,
     },
     async ({ batchId }) => {
       try {
