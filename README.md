@@ -122,6 +122,27 @@ it's authoring reference, not something this server exposes as tools.
 | `jsonfabrica_create_batch` | `POST /v1/batches` (small batches run synchronously — 200 with `results`; larger batches are queued — 202, poll with `jsonfabrica_get_batch`) |
 | `jsonfabrica_get_batch` | `GET /v1/batches/{batchId}` |
 
+Both tools return the same shape: `{ batchId, status, seed, results?, error? }`,
+where `status` is `queued | running | completed | failed`. `results` is present
+once the batch is `completed` and groups the generated documents by alias —
+each value is an array of the documents themselves:
+
+```json
+{
+  "batchId": "4f1c…",
+  "status": "completed",
+  "seed": 42,
+  "results": {
+    "customer": [{ "id": "c-1", "name": "Ada Lovelace" }],
+    "order": [{ "id": "o-1", "customerId": "c-1" }, { "id": "o-2", "customerId": "c-1" }]
+  }
+}
+```
+
+A failed batch carries `error: { code, message }` instead of `results`. Batches
+under 50 documents in total (the API's default threshold) run synchronously;
+larger ones return 202 `{ batchId, status: "queued", seed }`.
+
 ### Usage
 
 | Tool | Endpoint |

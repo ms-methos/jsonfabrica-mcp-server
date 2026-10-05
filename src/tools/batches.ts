@@ -117,9 +117,12 @@ export function registerBatchTools(server: McpServer, client: Client): void {
         'Calls POST /v1/batches. Generates multiple documents from one or more persisted templates in one ' +
         'call, optionally cross-referencing documents via `relations` — use this instead of looping ' +
         'jsonfabrica_generate_from_template yourself when you need many documents or cross-document ' +
-        'relations in a single request. Small batches run synchronously and the response is 200 with ' +
-        '`results`; larger batches are queued and the response is 202 with just `{ batchId, status, seed }` ' +
-        '— poll jsonfabrica_get_batch for the final results in that case. Like a single generate call, this ' +
+        'relations in a single request. Small batches (under 50 documents in total) run synchronously and ' +
+        'the response is 200 with `{ batchId, status, seed, results }` (or `error` instead of `results` if ' +
+        'the batch failed); `results` is an object keyed by alias whose values are arrays of the generated ' +
+        'documents themselves, e.g. `results.order[0]` is the first generated "order" document. Larger ' +
+        'batches are queued and the response is 202 with just `{ batchId, status, seed }` — poll ' +
+        'jsonfabrica_get_batch for the final results in that case. Like a single generate call, this ' +
         'is metered/billed per document produced and, unless namespaced, can advance real durable sequences ' +
         'and mutate durable variables referenced by the templates.',
       inputSchema: {
@@ -178,8 +181,11 @@ export function registerBatchTools(server: McpServer, client: Client): void {
         openWorldHint: true,
       },
       description:
-        'Calls GET /v1/batches/{batchId}. Returns batch status and, once complete, the generated ' +
-        'documents. Use this to poll a batch that was accepted asynchronously (202).',
+        'Calls GET /v1/batches/{batchId}. Returns `{ batchId, status, seed }` plus, once `status` is ' +
+        '"completed", `results` — an object keyed by alias whose values are arrays of the generated ' +
+        'documents (e.g. `results.order[]`) — or, if `status` is "failed", `error: { code, message }`. ' +
+        'Use this to poll a batch that was accepted asynchronously (202) until status is "completed" or ' +
+        '"failed".',
       inputSchema: {
         batchId: z.string().describe('ID of the batch job to fetch, as returned by jsonfabrica_create_batch. Required.'),
       },
